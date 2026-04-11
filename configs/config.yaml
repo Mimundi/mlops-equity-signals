@@ -1,0 +1,50 @@
+# MLOps Equity Signal Pipeline Configuration
+
+data:
+  raw_stocks: "data/raw/sp500_stocks.csv"
+  raw_index: "data/raw/sp500_index.csv"
+  raw_companies: "data/raw/sp500_companies.csv"
+  processed_dir: "data/processed"
+  predictions_dir: "data/predictions"
+
+features:
+  # Tickers to train on (subset for faster iteration; set to null for all)
+  tickers: ["AAPL", "MSFT", "AMZN", "GOOGL", "META", "NVDA", "JPM", "JNJ", "V", "PG"]
+  # Lookback windows for rolling features
+  momentum_windows: [5, 10, 21]
+  volatility_windows: [10, 21]
+  ma_windows: [5, 10, 21, 50]
+  rsi_window: 14
+  # Target: forward return horizon in days
+  forward_return_days: 5
+  # Signal threshold: classify as buy if forward return > threshold
+  signal_threshold: 0.0
+
+model:
+  test_size: 0.2
+  val_size: 0.1
+  random_state: 42
+  # XGBoost hyperparameters
+  xgb_params:
+    n_estimators: 300
+    max_depth: 6
+    learning_rate: 0.05
+    subsample: 0.8
+    colsample_bytree: 0.8
+    min_child_weight: 3
+    reg_alpha: 0.1
+    reg_lambda: 1.0
+
+mlflow:
+  tracking_uri: "mlruns"
+  experiment_name: "equity-signal-pipeline"
+
+api:
+  host: "0.0.0.0"
+  port: 8000
+  model_path: "models/best_model.joblib"
+
+monitoring:
+  drift_threshold: 0.05
+  accuracy_threshold: 0.60
+  log_dir: "data/predictions"

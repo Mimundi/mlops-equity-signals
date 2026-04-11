@@ -1,0 +1,46 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+dist/
+build/
+.eggs/
+*.egg
+venv/
+.venv/
+
+# Data (tracked by DVC)
+data/raw/*.csv
+data/processed/
+data/predictions/
+
+# Models
+models/*.joblib
+
+# MLflow
+mlruns/
+mlflow.db
+
+# DVC
+/tmp/dvc-storage/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Environment
+.env
+*.env
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Docker
+*.log

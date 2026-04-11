@@ -1,0 +1,47 @@
+stages:
+  ingest:
+    cmd: python -c "
+      from src.data.ingest import load_stock_data, filter_tickers, validate_data;
+      import yaml;
+      config = yaml.safe_load(open('configs/config.yaml'));
+      stocks = load_stock_data(config['data']['raw_stocks']);
+      stocks = filter_tickers(stocks, config['features']['tickers']);
+      report = validate_data(stocks);
+      print(report)
+      "
+    deps:
+      - data/raw/sp500_stocks.csv
+      - src/data/ingest.py
+      - configs/config.yaml
+
+  build_features:
+    cmd: python -c "
+      from src.data.ingest import load_stock_data, filter_tickers;
+      from src.features.build_features import build_features, save_processed_data;
+      import yaml;
+      config = yaml.safe_load(open('configs/config.yaml'));
+      stocks = load_stock_data(config['data']['raw_stocks']);
+      stocks = filter_tickers(stocks, config['features']['tickers']);
+      featured = build_features(stocks, config);
+      save_processed_data(featured, 'data/processed/featured_data.csv')
+      "
+    deps:
+      - data/raw/sp500_stocks.csv
+      - src/data/ingest.py
+      - src/features/build_features.py
+      - configs/config.yaml
+    outs:
+      - data/processed/featured_data.csv
+
+  train:
+    cmd: python run_pipeline.py
+    deps:
+      - data/processed/featured_data.csv
+      - src/models/train.py
+      - configs/config.yaml
+    outs:
+      - models/best_model.joblib
+      - models/feature_columns.joblib
+    metrics:
+      - mlruns/:
+          cache: false

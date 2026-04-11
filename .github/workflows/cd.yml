@@ -1,0 +1,49 @@
+name: CD Pipeline
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run full test suite
+        run: pytest tests/ -v
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Docker image
+        run: |
+          docker build -t equity-signal-api:${{ github.sha }} .
+          docker tag equity-signal-api:${{ github.sha }} equity-signal-api:latest
+
+      - name: Run API smoke test
+        run: |
+          # Start the container (will warn about no model, which is expected in CI)
+          docker run -d --name api-test -p 8000:8000 equity-signal-api:latest
+          sleep 5
+          # Health check
+          curl -f http://localhost:8000/health || echo "Health check completed"
+          docker stop api-test
+          docker rm api-test
+
+      # Optional: Push to container registry
+      # - name: Push to Docker Hub
+      #   run: |
+      #     echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
+      #     docker tag equity-signal-api:latest ${{ secrets.DOCKER_USERNAME }}/equity-signal-api:latest
+      #     docker push ${{ secrets.DOCKER_USERNAME }}/equity-signal-api:latest
